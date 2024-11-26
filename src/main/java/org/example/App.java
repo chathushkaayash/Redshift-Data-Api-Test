@@ -1,7 +1,6 @@
 package org.example;
 
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.retry.RetryMode;
@@ -26,7 +25,7 @@ public class App {
 
 
     @Benchmark
-    public static void test(Blackhole blackhole) throws InterruptedException {
+    public static void test() throws InterruptedException {
 
         String databaseName = "dev";
         String clusterId = "redshift-cluster-integration";
@@ -38,15 +37,15 @@ public class App {
 
 
         String query = "SELECT * FROM Users";
-        String id = redshiftDataClient.queryRequestAsync(query).join();
+        String id = redshiftDataClient.queryRequest(query);
 
         // Create and start threads
         Thread[] threads = new Thread[threadCount];
         for (int i = 0; i < threadCount; i++) {
             final int threadId = i + 1; // Unique ID for each thread
             threads[i] = new Thread(() -> {
-                    blackhole.consume(redshiftDataClient.checkStatementAsync(id).join());
-                    blackhole.consume(redshiftDataClient.getResultsAsync(id).join());
+                    int ee=redshiftDataClient.checkStatement(id);
+                GetStatementResultResponse res= redshiftDataClient.getResults(id);
 
             });
             threads[i].start();
@@ -92,8 +91,8 @@ static class RedshiftDataClientWrapper {
 
     public void query(String statement) {
         String id = queryRequest(statement);
-//        checkStatement(id);
-//        getResults(id);
+        checkStatement(id);
+        getResults(id);
     }
 
 
@@ -110,7 +109,7 @@ static class RedshiftDataClientWrapper {
         return response.id();
     }
 
-    private void checkStatement(String statementId) {
+    private int checkStatement(String statementId) {
         while (true) {
             DescribeStatementRequest describeRequest = DescribeStatementRequest.builder().id(statementId).build();
             DescribeStatementResponse describeResponse = redshiftDataClient.describeStatement(describeRequest);
@@ -131,10 +130,11 @@ static class RedshiftDataClientWrapper {
                 throw new RuntimeException("Thread interrupted while waiting for query completion.", e);
             }
         }
+        return 1    ;
     }
 
 
-    private void getResults(String statementId) {
+    private GetStatementResultResponse getResults(String statementId) {
         // Prepare the request to get the statement result
         GetStatementResultRequest resultRequest = GetStatementResultRequest.builder().id(statementId).build();
         GetStatementResultResponse resultResponse = getDataClient().getStatementResult(resultRequest);
@@ -143,6 +143,9 @@ static class RedshiftDataClientWrapper {
         if (resultResponse.columnMetadata() == null || resultResponse.records() == null) {
             throw new RuntimeException("No results found for query.");
         }
+
+        System.out.println("The result is: " + resultResponse.records());
+        return resultResponse;
 
     }
 
