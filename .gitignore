@@ -1,0 +1,5 @@
+.idea
+
+target
+*.class
+src/main/resources/simplelogger.properties
