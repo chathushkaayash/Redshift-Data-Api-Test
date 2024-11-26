@@ -48,8 +48,8 @@ public class RedshiftDataClientWrapper {
 
     public void query(String statement) {
         String id = queryRequest(statement);
-        checkStatement(id);
-        getResults(id);
+//        checkStatement(id);
+//        getResults(id);
     }
 
 
@@ -105,9 +105,10 @@ public class RedshiftDataClientWrapper {
 
     //---------------------- Async Functions ---------------------------------------
     public void queryAsync(String statement) {
-        String id = queryRequestAsync(statement).join();
-        checkStatementAsync(id).join();
-        getResultsAsync(id).join();
+        queryRequestAsync(statement);
+//        String id = queryRequestAsync(statement).join();
+//        checkStatementAsync(id).join();
+//        getResultsAsync(id).join();
     }
 
     private static RedshiftDataAsyncClient getAsyncDataClient() {
@@ -211,6 +212,8 @@ public class RedshiftDataClientWrapper {
                     // Optionally add more logic here if needed after handling the response
                 });
     }
+
+
 }
 
 
